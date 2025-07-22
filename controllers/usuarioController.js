@@ -60,14 +60,28 @@ const obtenerUsuarioPorId = async (req, res) => {
 // ✏️ Actualizar usuario
 const actualizarUsuario = async (req, res) => {
   try {
-    const usuarioActualizado = await Usuario.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
-    if (!usuarioActualizado) return res.status(404).json({ mensaje: 'Usuario no encontrado' });
-    res.status(200).json(usuarioActualizado);
+    const usuario = await Usuario.findById(req.params.id);
+    if (!usuario) return res.status(404).json({ mensaje: "Usuario no encontrado" });
+
+    // Actualizar campos
+    usuario.nombre = req.body.nombre || usuario.nombre;
+    usuario.email = req.body.email || usuario.email;
+    usuario.sector = req.body.sector || usuario.sector;
+    usuario.rol = req.body.rol || usuario.rol;
+
+    // Solo encriptar si se envía una contraseña nueva
+    if (req.body.contraseña) {
+      usuario.contraseña = req.body.contraseña; // 🔐 El hook hará el hash
+    }
+
+    await usuario.save(); // 👈 Esto ejecuta pre('save') automáticamente
+
+    res.status(200).json(usuario);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al actualizar usuario', error: error.message });
+    res.status(500).json({
+      mensaje: "Error al actualizar usuario",
+      error: error.message,
+    });
   }
 };
 
